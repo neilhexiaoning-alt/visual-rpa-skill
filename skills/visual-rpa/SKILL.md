@@ -1,131 +1,119 @@
 ---
 name: visual-rpa
-description: "视觉RPA桌面自动化。当用户要求操作桌面应用时使用此技能：点击图标、打开应用、在输入框输入文字、点击按钮、滚动页面等。通过截屏+视觉模型实现纯视觉定位，不依赖DOM或辅助功能API。"
-metadata:
-  {
-    "openclaw":
-      {
-        "emoji": "🖱️",
-        "os": ["win32"],
-        "requires": { "anyBins": ["python", "python3"], "env": ["DASHSCOPE_API_KEY"] }
-      }
-  }
+description: "Visual RPA desktop automation skill. Use when user asks to operate desktop apps, click icons, open applications, type text in input fields, click buttons, scroll pages, send messages via WeChat or other apps. Uses screen capture and Qwen vision model for pure visual positioning without DOM or accessibility APIs."
 ---
 
-# 视觉 RPA 桌面自动化
+# Visual RPA Desktop Automation
 
-> **全自动执行，各步骤之间不要等待用户确认。**
+> Auto-execute all steps without waiting for user confirmation between steps.
 
-通过屏幕截图 + 通义千问视觉模型 (Qwen-VL) 实现纯视觉桌面自动化操作。
+Desktop automation via screen capture + Qwen vision model (Qwen-VL). No DOM or accessibility API needed.
 
-## 工作原理
+## How it works
 
-1. 截取屏幕 → 缩略图粗定位目标元素
-2. 全分辨率裁剪 → 精确定位坐标
-3. 执行鼠标/键盘操作 → 截图验证是否成功
-4. 支持复合指令自动分解为多步执行
+1. Capture screen -> thumbnail rough positioning
+2. Full-resolution crop -> precise coordinate refinement
+3. Execute mouse/keyboard action -> screenshot verification
+4. Compound instructions automatically decomposed into atomic steps
 
-## 使用方法
+## Usage
 
-### 批量任务模式（推荐）
+Use exec tool to run commands. Script path: `$env:TAXBOT_ROOT/skills/visual-rpa/scripts/visual_rpa.py`
 
-用 exec 工具执行命令。脚本路径固定为 `$env:TAXBOT_ROOT/skills/visual-rpa/scripts/visual_rpa.py`。
+Requires `DASHSCOPE_API_KEY` environment variable to be set.
 
-**单步任务：**
-
-```
-python "$env:TAXBOT_ROOT/skills/visual-rpa/scripts/visual_rpa.py" --mode task --task "点击打开微信"
-```
-
-**复合任务（自动分解为多步）：**
+### Single task
 
 ```
-python "$env:TAXBOT_ROOT/skills/visual-rpa/scripts/visual_rpa.py" --mode task --task "打开微信，并打开文件传输助手聊天，在输入框输入你好，并点击发送"
+python "$env:TAXBOT_ROOT/skills/visual-rpa/scripts/visual_rpa.py" --mode task --task "click to open WeChat"
 ```
 
-**多步任务（手动指定每步）：**
+### Compound task (auto-decomposed)
 
 ```
-python "$env:TAXBOT_ROOT/skills/visual-rpa/scripts/visual_rpa.py" --mode task --task "点击打开Chrome浏览器" "在地址栏输入 baidu.com 并回车" "在搜索框输入天气预报" "点击搜索按钮"
+python "$env:TAXBOT_ROOT/skills/visual-rpa/scripts/visual_rpa.py" --mode task --task "open WeChat, open File Transfer chat, type hello in input box, click send"
 ```
 
-**跳过验证（更快，省 API 调用）：**
+### Multi-step task (manually specified)
 
 ```
-python "$env:TAXBOT_ROOT/skills/visual-rpa/scripts/visual_rpa.py" --mode task --no-verify --task "点击打开计算器"
+python "$env:TAXBOT_ROOT/skills/visual-rpa/scripts/visual_rpa.py" --mode task --task "click Chrome browser" "type baidu.com in address bar and press enter" "type weather in search box" "click search button"
 ```
 
-### 参数说明
-
-| 参数 | 说明 |
-|------|------|
-| `--mode task` | 批量任务模式（必须指定） |
-| `--mode interactive` | 交互模式（默认） |
-| `--task "指令1" "指令2"` | 要执行的操作指令，支持多个 |
-| `--no-verify` | 跳过操作后的验证步骤 |
-| `--model MODEL` | 视觉模型名称（默认 qwen-vl-max-latest） |
-| `--api-key KEY` | API Key（默认读取 DASHSCOPE_API_KEY 环境变量） |
-
-## 支持的操作类型
-
-| 操作 | 指令示例 |
-|------|----------|
-| 点击 | "点击开始菜单"、"点击Chrome图标" |
-| 双击 | "双击桌面上的回收站" |
-| 右键 | "右键点击桌面空白处" |
-| 输入文字 | "在搜索框输入天气预报"、"在输入框输入你好" |
-| 快捷键 | "按下 Ctrl+C" |
-| 滚动 | "向下滚动页面" |
-| 等待 | "等待页面加载" |
-
-## 指令编写要点
-
-- **具体明确**：说清楚点哪个元素。"点击微信图标"比"打开微信"更精确
-- **位置描述**：可以加位置提示。"点击任务栏上的微信图标"、"点击左侧列表中的文件传输助手"
-- **一步一操作**：复杂操作拆成多步。也可以写复合指令，系统会自动分解
-- **输入文字时**：明确说"在XXX中输入YYY"，系统会自动识别为输入操作
-
-## 输出解读
-
-脚本输出包含每步的执行状态：
+### Skip verification (faster)
 
 ```
-  [OK] 步骤0: 点击打开微信
+python "$env:TAXBOT_ROOT/skills/visual-rpa/scripts/visual_rpa.py" --mode task --no-verify --task "click to open Calculator"
+```
+
+### Parameters
+
+| Parameter | Description |
+|-----------|-------------|
+| `--mode task` | Batch task mode (required) |
+| `--mode interactive` | Interactive mode (default) |
+| `--task "step1" "step2"` | Task instructions, supports multiple |
+| `--no-verify` | Skip post-action verification |
+| `--model MODEL` | Vision model name (default: qwen-vl-max-latest) |
+| `--api-key KEY` | API Key (defaults to DASHSCOPE_API_KEY env var) |
+
+## Supported actions
+
+| Action | Example instructions |
+|--------|---------------------|
+| Click | "click start menu", "click Chrome icon" |
+| Double click | "double click Recycle Bin on desktop" |
+| Right click | "right click on desktop blank area" |
+| Type text | "type weather in search box", "type hello in input box" |
+| Hotkey | "press Ctrl+C" |
+| Scroll | "scroll down the page" |
+| Wait | "wait for page to load" |
+
+## Instruction tips
+
+- Be specific: "click WeChat icon on taskbar" is better than "open WeChat"
+- Instructions can be in Chinese or English, the model understands both
+- Complex operations can be written as compound instructions, system auto-decomposes
+- For text input: say "type XXX in YYY", system auto-detects as input action
+
+## Output format
+
+```
+  [OK] Step 0: click to open WeChat
        click @ (375,1591)
-  [OK] 步骤1: 在微信中点击文件传输助手进入聊天
+  [OK] Step 1: click File Transfer Assistant in WeChat
        click @ (154,97)
-  [FAIL] 步骤2: 在输入框中输入你好
+  [FAIL] Step 2: type hello in input box
        type @ (300,1364)
-  2/3 成功
+  2/3 succeeded
 ```
 
-- **OK** = 操作成功并通过验证
-- **FAIL** = 操作失败或验证未通过，默认会自动重试最多 3 次
+- **OK** = action succeeded and verified
+- **FAIL** = action failed or verification failed, auto-retries up to 3 times
 
-## 常见场景
+## Common scenarios
 
-### 发送微信消息
-
-```
-python "$env:TAXBOT_ROOT/skills/visual-rpa/scripts/visual_rpa.py" --mode task --task "打开微信，打开文件传输助手聊天，在输入框输入你好，点击发送"
-```
-
-### 打开应用并操作
+### Send WeChat message
 
 ```
-python "$env:TAXBOT_ROOT/skills/visual-rpa/scripts/visual_rpa.py" --mode task --task "点击打开Chrome浏览器" "在地址栏输入 https://www.baidu.com 并回车"
+python "$env:TAXBOT_ROOT/skills/visual-rpa/scripts/visual_rpa.py" --mode task --task "open WeChat, open File Transfer Assistant chat, type hello in input box, click send"
 ```
 
-### 桌面操作
+### Open app and navigate
 
 ```
-python "$env:TAXBOT_ROOT/skills/visual-rpa/scripts/visual_rpa.py" --mode task --task "右键点击桌面空白处" "点击新建文件夹"
+python "$env:TAXBOT_ROOT/skills/visual-rpa/scripts/visual_rpa.py" --mode task --task "click Chrome browser" "type https://www.baidu.com in address bar and press enter"
 ```
 
-## 注意事项
+### Desktop operations
 
-- 每步操作需 3-8 秒（截图 + API 调用 + 验证），不适合毫秒级响应场景
-- 中文输入通过剪贴板粘贴实现，会覆盖当前剪贴板内容
-- 仅操作主屏幕
-- 日志和截图保存在 `./rpa_logs/` 目录，可用于调试
-- 如果操作失败，检查 `./rpa_logs/rpa.log` 和截图文件排查原因
+```
+python "$env:TAXBOT_ROOT/skills/visual-rpa/scripts/visual_rpa.py" --mode task --task "right click on desktop blank area" "click New Folder"
+```
+
+## Notes
+
+- Each step takes 3-8 seconds (screenshot + API calls + verification)
+- Chinese text input uses clipboard paste, will overwrite current clipboard
+- Only operates on primary screen
+- Logs and screenshots saved in `./rpa_logs/` directory for debugging
