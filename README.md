@@ -100,6 +100,65 @@ for r in results:
     print(f"{'OK' if r.success else 'FAIL'} {r.instruction}")
 ```
 
+## OpenClaw Skill 集成
+
+本项目提供了 [OpenClaw](https://github.com/nicepkg/openclaw) 技能插件，可以让 AI 助手直接操控桌面。
+
+### 安装
+
+将 `skills/visual-rpa/` 目录复制到 OpenClaw 的技能目录：
+
+```bash
+# 复制到 OpenClaw 内置技能目录
+cp -r skills/visual-rpa /path/to/openclaw/skills/
+
+# 或复制到用户技能目录
+cp -r skills/visual-rpa ~/.openclaw/skills/
+```
+
+### 配置
+
+在 OpenClaw 配置中设置 API Key：
+
+```json
+{
+  "skills": {
+    "entries": {
+      "visual-rpa": {
+        "enabled": true
+      }
+    }
+  }
+}
+```
+
+确保 `DASHSCOPE_API_KEY` 环境变量已设置。
+
+### 使用
+
+安装后，直接对 AI 助手说自然语言指令即可：
+
+- "帮我打开微信，给文件传输助手发一条你好"
+- "打开 Chrome 浏览器，搜索今天天气"
+- "点击桌面上的计算器"
+
+AI 助手会自动识别为桌面操作意图，调用 visual-rpa 技能完成任务。
+
+### Skill 文件结构
+
+```
+skills/visual-rpa/
+├── SKILL.md              # 技能定义（frontmatter 元数据 + LLM 指令）
+└── scripts/
+    └── visual_rpa.py     # RPA 引擎脚本
+```
+
+| 元数据 | 值 |
+|--------|-----|
+| 触发条件 | 用户提到操作桌面、点击、打开应用、输入文字等 |
+| 平台 | Windows (`win32`) |
+| 依赖 | Python + `DASHSCOPE_API_KEY` 环境变量 |
+
 ## 特性
 
 - **两轮定位**: 缩略图粗定位 + 全分辨率裁剪精定位，提高坐标精度
@@ -108,6 +167,7 @@ for r in results:
 - **自动重试**: 定位失败或验证失败时自动重试
 - **中文输入**: 通过 Windows API 剪贴板实现可靠的中文输入
 - **JSON 容错**: 自动修复模型返回的畸形 JSON
+- **OpenClaw 集成**: 可作为 AI 助手技能插件，自然语言驱动桌面自动化
 
 ## 参数说明
 
